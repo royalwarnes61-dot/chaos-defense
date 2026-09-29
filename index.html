@@ -1,0 +1,531 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>Chaos Defense: Ultimate</title>
+<style>
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#160b24;color:#fff;font-family:Arial,Helvetica,sans-serif}
+button{font:inherit;color:inherit;cursor:pointer}
+#game{position:relative;width:100%;height:100%;overflow:hidden;background:
+radial-gradient(circle at 15% 15%,#ff3cac22 0%,transparent 30%),
+radial-gradient(circle at 85% 20%,#00e5ff20 0%,transparent 32%),
+radial-gradient(circle at 50% 100%,#7c3cff22 0%,transparent 38%),
+linear-gradient(135deg,#170b2b,#0d1730 48%,#25102c)}
+#top{height:58px;position:absolute;z-index:20;left:0;right:0;top:0;display:flex;gap:7px;align-items:center;padding:7px;
+background:linear-gradient(90deg,#251047ee,#111f43ee,#3a123eee);
+border-bottom:2px solid #ff4fd833;box-shadow:0 5px 25px #0008}
+.logo{font-weight:1000;font-size:18px;letter-spacing:-.5px;margin-right:auto}
+.res{padding:7px 9px;border:1px solid #33435f;background:#121a2a;border-radius:10px;font-size:12px;font-weight:800}
+.res b{color:#ffd75a}
+#map{position:absolute;top:58px;bottom:170px;left:0;right:0;background:
+radial-gradient(circle at 50% 50%,#25d0ff0c,transparent 38%),
+linear-gradient(135deg,#142b3820,#ff3cac09 45%,#7c3cff12)}
+#canvas{width:100%;height:100%;display:block}
+#entities{position:absolute;inset:0;pointer-events:none}
+.enemy,.tower{position:absolute;transform:translate(-50%,-50%);display:flex;align-items:center;justify-content:center}
+.enemy{width:30px;height:30px;border-radius:50%;z-index:5;font-size:17px;filter:drop-shadow(0 3px 5px #000)}
+.enemy.boss{width:58px;height:58px;font-size:31px}
+.hp{position:absolute;top:-9px;left:-5px;width:40px;height:5px;background:#300e18;border-radius:4px;overflow:hidden}
+.hp i{display:block;height:100%;background:#4ee878}
+.tower{width:56px;height:56px;border-radius:50%;z-index:10;background:radial-gradient(circle,#344664,#111827);border:2px solid #7183a2;font-size:28px;box-shadow:0 5px 18px #0008}
+.tower.sel{border-color:#ffd85a;box-shadow:0 0 0 4px #ffd85a33,0 0 24px #ffd85a44}
+.tlvl{position:absolute;right:-5px;bottom:-9px;background:#080d16;border:1px solid #536481;border-radius:7px;font-size:9px;padding:2px 4px}
+.proj{position:absolute;width:8px;height:8px;border-radius:50%;z-index:8;box-shadow:0 0 12px currentColor}
+.float{position:absolute;z-index:30;font-weight:900;animation:float .65s forwards;pointer-events:none}
+@keyframes float{to{opacity:0;transform:translateY(-35px) scale(1.15)}}
+.part{position:absolute;z-index:30;width:6px;height:6px;border-radius:50%;pointer-events:none;animation:part .65s forwards}
+@keyframes part{to{opacity:0;transform:translate(var(--x),var(--y)) scale(.1)}}
+#bottom{position:absolute;z-index:20;left:0;right:0;bottom:0;height:170px;
+background:linear-gradient(180deg,#17102df7,#230d2ff8);
+border-top:2px solid #ff4fd844;padding:7px;box-shadow:0 -10px 35px #0008}
+#shop{height:92px;display:flex;gap:7px;overflow-x:auto;scrollbar-width:none;padding:2px}
+#shop::-webkit-scrollbar{display:none}
+.cardbtn{min-width:82px;height:86px;
+background:linear-gradient(145deg,#241b48,#171d3b);
+border:1px solid #7059ad;border-radius:12px;padding:5px;
+display:flex;flex-direction:column;align-items:center;justify-content:center;
+box-shadow:inset 0 1px #ffffff14,0 4px 12px #0006;transition:.15s}
+.cardbtn.lock{opacity:.38;filter:grayscale(1)}
+.cardbtn .ico{font-size:26px}.cardbtn small{font-size:9px;font-weight:800}.cost{color:#ffd75a;font-size:9px}
+#controls{display:flex;gap:6px;height:55px;align-items:center}
+.ctrl{flex:1;height:40px;border:1px solid #34435d;border-radius:10px;background:#162238;font-weight:900}
+.ctrl.main{background:linear-gradient(135deg,#159957,#22c978);border:0}
+#panel{position:absolute;z-index:40;right:10px;top:68px;width:285px;max-height:calc(100% - 245px);overflow:auto;padding:13px;
+border:2px solid #b14cff88;border-radius:17px;
+background:linear-gradient(145deg,#24113bf5,#111b38f5,#35142ff5);
+box-shadow:0 20px 60px #0008,0 0 35px #b14cff18;display:none}
+#panel.show{display:block}
+.row{display:flex;justify-content:space-between;margin:5px 0;color:#aebbd0;font-size:12px}.row b{color:#fff}
+.pbtn{width:100%;padding:9px;margin-top:6px;border:0;border-radius:9px;background:#263957;font-weight:900}.pbtn.up{background:linear-gradient(135deg,#7657ff,#a070ff)}.pbtn.bad{background:#642536}.pbtn:disabled{opacity:.4}
+.screen{position:absolute;z-index:100;inset:0;background:radial-gradient(circle at center,#172642,#060910 72%);display:flex;align-items:center;justify-content:center;padding:16px}
+.screen.hidden{display:none}
+.modal{width:min(850px,96vw);max-height:94vh;overflow:auto;padding:23px;border:1px solid #3a4b69;border-radius:22px;background:#0c1321f8;box-shadow:0 30px 100px #0009}
+.title{text-align:center;font-size:clamp(38px,9vw,76px);font-weight:1000;letter-spacing:-4px;background:linear-gradient(90deg,#55e6ff,#a477ff,#ff7090);-webkit-background-clip:text;color:transparent}
+.sub{text-align:center;color:#a6b4ca}
+.big{width:100%;padding:13px;margin-top:8px;border:0;border-radius:11px;background:linear-gradient(135deg,#4c6fff,#8d5cff);font-weight:1000}
+.grid{display:grid;grid-template-columns:repeat(5,1fr);gap:7px;margin-top:12px}
+.tile{padding:10px;background:#121d30;border:1px solid #34435e;border-radius:10px;text-align:center}
+.tile.done{border-color:#35bd72;background:#163728}
+.tile button{width:100%;padding:8px;background:#1b2a43;border:1px solid #3c4d6a;border-radius:8px;margin-top:6px}
+.tabs{display:flex;gap:6px;overflow:auto;margin:8px 0}.tab{white-space:nowrap;padding:8px 10px;background:#162238;border:1px solid #34435d;border-radius:9px}
+.notice{position:absolute;z-index:200;top:70px;left:50%;transform:translateX(-50%);pointer-events:none}
+.note{background:#101a2b;border:1px solid #485b7d;border-radius:9px;padding:9px 13px;margin:5px;animation:note 2.5s forwards;box-shadow:0 8px 30px #0007}
+@keyframes note{0%,10%{opacity:0;transform:translateY(-10px)}15%,80%{opacity:1;transform:none}100%{opacity:0}}
+
+<style id="colorful-overhaul">
+html,body,#game{background:#2b102f!important;color:#fff0fb}
+body{
+ background:
+ radial-gradient(circle at 8% 12%,rgba(255,77,166,.42),transparent 22%),
+ radial-gradient(circle at 88% 10%,rgba(255,180,45,.32),transparent 22%),
+ radial-gradient(circle at 50% 92%,rgba(120,70,255,.36),transparent 30%),
+ linear-gradient(135deg,#3a1235 0%,#25102e 45%,#42142c 100%)!important;
+}
+#top{
+ background:linear-gradient(90deg,#ff4fa3,#ff8a3d,#ffd23f,#9d63ff,#42e8d0)!important;
+ border-color:#ffd45a!important;box-shadow:0 8px 30px rgba(255,72,160,.3)!important;
+}
+#map{
+ background:
+ radial-gradient(circle at 20% 25%,rgba(255,211,77,.20),transparent 15%),
+ radial-gradient(circle at 80% 70%,rgba(255,73,160,.24),transparent 18%),
+ radial-gradient(circle at 55% 45%,rgba(85,236,205,.16),transparent 22%),
+ linear-gradient(135deg,#5a2147,#35204f 48%,#6a2448)!important;
+ border-color:#ff7fc2!important;
+}
+#bottom,.panel{
+ background:linear-gradient(180deg,#552052,#35163e 55%,#26132f)!important;
+ border-color:#ff79bd!important;
+}
+button,.btn{
+ background:linear-gradient(135deg,#ff4fa3,#a65cff 48%,#4de8d0)!important;
+ border-color:#ffd15c!important;color:white!important;
+ box-shadow:0 5px 18px rgba(255,79,163,.3)!important;
+}
+button:hover,.btn:hover{filter:saturate(1.35) brightness(1.12);transform:translateY(-2px)}
+.card,.tile,.shopCard,.towerCard{
+ background:linear-gradient(145deg,rgba(255,82,166,.22),rgba(116,79,255,.22),rgba(55,231,202,.16))!important;
+ border-color:rgba(255,211,92,.7)!important;
+}
+.screen{
+ background:
+ radial-gradient(circle at 15% 20%,rgba(255,75,165,.35),transparent 24%),
+ radial-gradient(circle at 85% 25%,rgba(255,196,60,.28),transparent 22%),
+ radial-gradient(circle at 50% 85%,rgba(75,225,200,.25),transparent 28%),
+ linear-gradient(135deg,#4b183f,#25122f 55%,#5b203f)!important;
+}
+.modal,.modalBox{
+ background:linear-gradient(145deg,#63204d,#3b1a50 50%,#5b263f)!important;
+ border-color:#ffd35a!important;
+}
+#notice{background:linear-gradient(90deg,#ff4f9f,#ff9d3d,#8d63ff)!important}
+.logo,.title{
+ text-shadow:0 0 18px rgba(255,92,177,.7),0 0 28px rgba(255,196,72,.35);
+}
+</style>
+
+@media(max-width:700px){
+ #top{height:52px}.logo{font-size:13px}.res{font-size:10px;padding:6px}
+ #map{top:52px;bottom:166px}#bottom{height:166px}
+ #panel{left:8px;right:8px;width:auto;max-height:calc(100% - 225px)}
+ .grid{grid-template-columns:repeat(5,1fr)}.modal{padding:15px}
+}
+</style>
+</head>
+<body>
+<div id="game">
+<header id="top">
+<div class="logo">⚡ CHAOS DEFENSE</div>
+<div class="res">🪙 <b id="coins">750</b></div>
+<div class="res">💎 <b id="gems">10</b></div>
+<div class="res">❤️ <b id="lives">100</b></div>
+<div class="res">🌊 <b id="wave">0/12</b></div>
+<div class="res">⭐ <b id="xp">0</b></div>
+</header>
+
+<div id="map"><canvas id="canvas"></canvas><div id="entities"></div></div>
+<div id="panel"></div><div class="notice" id="notice"></div>
+
+<div id="bottom">
+<div id="shop"></div>
+<div id="controls">
+<button class="ctrl main" id="start">▶ START WAVE</button>
+<button class="ctrl" id="speed">1×</button>
+<button class="ctrl" id="menu">☰ MENU</button>
+</div>
+</div>
+
+<div class="screen" id="home">
+<div class="modal">
+<div class="title">CHAOS DEFENSE</div>
+<p class="sub">ULTIMATE EDITION — towers, evolutions, bosses, quests, skins, maps, prestige and more.</p>
+<button class="big" onclick="newRun()">▶ PLAY</button>
+<button class="big" onclick="openLevels()">🌎 MAPS & LEVELS</button>
+<button class="big" onclick="openCollection()">🗃️ TOWER COLLECTION</button>
+<button class="big" onclick="openMeta()">✨ UPGRADES / PRESTIGE</button>
+<button class="big" onclick="openQuests()">📜 QUESTS & DAILY REWARD</button>
+<button class="big" onclick="openAchievements()">🏆 ACHIEVEMENTS</button>
+<p class="sub" style="font-size:11px">Everything saves automatically in your browser.</p>
+</div>
+</div>
+
+<div class="screen hidden" id="modalScreen">
+<div class="modal" id="modalContent"></div>
+</div>
+</div>
+
+<script>
+"use strict";
+
+/* ================= SAVE ================= */
+const KEY="chaosDefenseUltimate_v1";
+let S={
+ coins:750,gems:10,xp:0,prestige:0,currentLevel:1,unlocked:["scout","gunner","sniper","farmer","freezer"],
+ ownedSkins:["default"],selectedSkins:{},completed:[],quests:{kills:0,waves:0,bosses:0,coins:0},daily:0,
+ totalKills:0,totalBosses:0,totalWaves:0,totalCoins:0,towersPlaced:0
+};
+try{Object.assign(S,JSON.parse(localStorage.getItem(KEY))||{})}catch(e){}
+function save(){localStorage.setItem(KEY,JSON.stringify(S))}
+
+/* ================= AUDIO ================= */
+let audioCtx=null,musicTimer=null,musicOn=true;
+function audio(){
+ if(!audioCtx)audioCtx=new (window.AudioContext||window.webkitAudioContext)();
+ if(audioCtx.state==="suspended")audioCtx.resume();
+}
+function tone(freq=440,d=.06,type="sine",vol=.025){
+ if(!musicOn)return;
+ audio();
+ const o=audioCtx.createOscillator(),g=audioCtx.createGain();
+ o.type=type;o.frequency.value=freq;g.gain.value=vol;o.connect(g);g.connect(audioCtx.destination);
+ o.start();g.gain.exponentialRampToValueAtTime(.0001,audioCtx.currentTime+d);o.stop(audioCtx.currentTime+d);
+}
+function sfx(kind){
+ if(kind==="shoot")tone(500,.035,"square",.018);
+ if(kind==="hit")tone(160,.04,"sawtooth",.018);
+ if(kind==="coin")tone(880,.08,"sine",.025);
+ if(kind==="boss")tone(90,.25,"sawtooth",.035);
+ if(kind==="win"){tone(523,.12);setTimeout(()=>tone(659,.12),100);setTimeout(()=>tone(784,.18),200)}
+}
+function startMusic(){
+ if(!musicOn||musicTimer)return;
+ const notes=[262,330,392,330,294,349,440,349];
+ let i=0;musicTimer=setInterval(()=>{tone(notes[i++%notes.length],.16,"triangle",.012)},430);
+}
+function stopMusic(){clearInterval(musicTimer);musicTimer=null}
+
+/* ================= DATA ================= */
+const T={
+ scout:["Scout","🔫",100,18,130,550,"#61d8ff"],
+ gunner:["Gunner","🔫",250,10,145,140,"#82ff73"],
+ sniper:["Sniper","🎯",400,180,300,1800,"#ffdf65"],
+ farmer:["Coin Farmer","🌾",350,0,0,4000,"#ffd34e"],
+ freezer:["Freezer","❄️",500,12,150,700,"#75eaff"],
+ flame:["Flame Thrower","🔥",650,8,110,100,"#ff6a35"],
+ rocket:["Rocket Launcher","🚀",900,260,210,2400,"#ff9b4a"],
+ laser:["Laser","🔴",1200,95,250,350,"#ff3b62"],
+ tesla:["Tesla","⚡",1450,110,175,900,"#9e7cff"],
+ wizard:["Wizard","🧙",1800,220,190,1100,"#b776ff"],
+ ninja:["Ninja","🥷",2100,70,170,250,"#aaa"],
+ samurai:["Samurai","⚔️",2600,450,90,900,"#ff526d"],
+ doctor:["Doctor","🧑‍⚕️",3000,0,180,3000,"#6affb0"],
+ cowboy:["Cowboy","🤠",3400,130,180,400,"#d99b60"],
+ pirate:["Pirate","🏴‍☠️",4000,500,210,1500,"#d2a85e"],
+ robot:["Battle Robot","🤖",5000,300,220,260,"#4de4ff"],
+ alien:["Alien","👽",6500,700,240,800,"#62ff8e"],
+ hoodie:["Orange Hoodie","🧥",7777,777,200,777,"#ff8a3d"],
+ timekeeper:["Time Keeper","⏳",10000,850,280,1200,"#ffdc67"],
+ void:["Void Walker","🌌",15000,1700,300,1300,"#b25cff"],
+ god:["CHAOS GOD","👑",50000,8000,500,800,"#fff"]
+};
+const EXTRA_NAMES=["Firebug","Storm Kid","Moon Mage","Jester","Mech Pilot","Shadow Monk","Plasma Ranger","Cyber Chef","Crystal Knight","Bee Keeper","Star Captain","Bubble Blaster","Gravity Kid","Meteor Monk","Frost Giant","Thunder Beast","Portal Wizard","Rocket Kid","Neon Ninja","Dino Rider","Arcane Archer","Toxic Doctor","Dragon Rider","Lunar Samurai","Galaxy Gunner","Time Pirate","Quantum Bot","Cosmic Cowboy","Void Samurai","Chaos Chef","Prism Mage","Sun Warrior","Moon Warrior","Dark Ranger","Pixel Hero","Glitch Lord","Comet Rider","Astro Ninja","Thunder Cowboy","Crystal Wizard","Storm Samurai","Laser Chef","Mega Farmer","Space Doctor","Plasma Pirate","Rift Walker","Chrono Ninja","Nebula Mage","Star Guardian","Reality Breaker","Omega Hero","Final Meme"];
+EXTRA_NAMES.forEach((n,i)=>{
+ const id="x"+i;
+ T[id]=[n,["🧨","🌩️","🌙","🃏","🦾","🥷","🔫","👨‍🍳","💎","🐝","🚀","🫧","🌀","☄️","🧊","🐲","🌀","🚀","🌈","🦖"][i%20],600+i*420,45+i*12,120+i*3,900-Math.min(i*8,500),"#"+["ff8b4d","75eaff","c77dff","ff5ca8","69e0ff"][i%5]];
+});
+const EVOLVE={
+ scout:["Scout","Rapid Scout", "Elite Scout"],
+ gunner:["Gunner","Minigunner","Bullet Storm"],
+ sniper:["Sniper","Deadeye","Starshot"],
+ freezer:["Freezer","Cryomancer","Absolute Zero"],
+ flame:["Flame Thrower","Inferno","Solar Flare"],
+ rocket:["Rocket Launcher","Warhead","Apocalypse"],
+ wizard:["Wizard","Archmage","Reality Mage"],
+ ninja:["Ninja","Shadow Ninja","Void Ninja"],
+ samurai:["Samurai","Ronin","Demon Blade"],
+ robot:["Battle Robot","War Machine","Titan"],
+ alien:["Alien","UFO Commander","Alien Overlord"],
+ hoodie:["Orange Hoodie","Hoodie Legend","???"],
+ timekeeper:["Time Keeper","Chronomancer","Time God"],
+ void:["Void Walker","Rift Lord","Singularity"],
+ god:["CHAOS GOD","CHAOS EMPEROR","CHAOS ITSELF"]
+};
+const EN={
+ basic:["Basic","👾",100,.075,12],
+ fast:["Runner","🏃",55,.17,16],
+ tank:["Tank","🪨",650,.035,35],
+ giant:["Giant","👹",2200,.022,100],
+ swarm:["Swarm","🐜",25,.20,8],
+ armored:["Armored","🛡️",800,.06,55],
+ regen:["Regenerator","🧟",500,.065,70],
+ flying:["Flying","🦇",260,.14,80],
+ splitter:["Splitter","🟣",1000,.055,110],
+ invisible:["Invisible","👻",750,.12,150],
+ shield:["Shield Carrier","🔰",1800,.045,200],
+ healer:["Enemy Healer","💚",1200,.06,180],
+ boss:["BOSS","👑",15000,.025,1000],
+ mega:["MEGA BOSS","☠️",60000,.018,5000],
+ titan:["TITAN","🗿",180000,.012,15000]
+};
+const MAPS=[
+["Meadow Mayhem","🌳","#1d442e"],["Desert Circuit","🏜️","#604d36"],["Frozen Lab","❄️","#294e67"],["Neon City","🌃","#243b65"],["Volcano Core","🌋","#542b2b"],
+["Candy Chaos","🍬","#5a2d58"],["Pirate Bay","🏴‍☠️","#214f60"],["Moon Base","🌙","#303044"],["Alien Planet","👽","#263f31"],["Void Realm","🌌","#261c46"],
+["Sky Fortress","☁️","#334c67"],["Clockwork City","⏱️","#4b4431"],["Dragon Valley","🐲","#473127"],["Cyber Grid","💻","#173d48"],["Crystal Caves","💎","#343061"],
+["Haunted Woods","👻","#29273a"],["Robot Factory","🤖","#343b42"],["Space Station","🚀","#242f52"],["Meme Dimension","😂","#493329"],["Final Dimension","⚡","#171524"]
+];
+let towers=[],enemies=[],shots=[],game=false,wave=0,maxWave=12,speed=1,selected=null,build=null,W=0,H=0,last=performance.now();
+const canvas=document.getElementById("canvas"),ctx=canvas.getContext("2d"),map=document.getElementById("map"),entities=document.getElementById("entities");
+function resize(){W=map.clientWidth;H=map.clientHeight;canvas.width=W;canvas.height=H}addEventListener("resize",resize);resize();
+
+/* ================= MAP/PATH ================= */
+const path=[
+[-.04,.18],[.22,.18],[.22,.42],[.76,.42],[.76,.68],[.25,.68],[.25,.84],[1.04,.84]
+];
+function point(p){let s=p*(path.length-1),i=Math.floor(s),f=s-i;if(i>=path.length-1){let q=path[path.length-1];return{x:q[0]*W,y:q[1]*H}}let a=path[i],b=path[i+1];return{x:(a[0]+(b[0]-a[0])*f)*W,y:(a[1]+(b[1]-a[1])*f)*H}}
+function onPath(x,y){for(let p=0;p<=1;p+=.012){let q=point(p);if(Math.hypot(x-q.x,y-q.y)<39)return true}return false}
+function draw(){
+ ctx.clearRect(0,0,W,H);
+ ctx.fillStyle=MAPS[(S.currentLevel-1)%MAPS.length][2];ctx.globalAlpha=.18;ctx.fillRect(0,0,W,H);ctx.globalAlpha=1;
+ for(let i=0;i<28;i++){
+   let px=(i*83+31)%Math.max(W,1), py=(i*47+19)%Math.max(H,1);
+   ctx.beginPath();ctx.arc(px,py,1.5+(i%3),0,Math.PI*2);
+   ctx.fillStyle=["#ff5bc8","#5eeaff","#ffd75a","#9b7cff"][i%4];
+   ctx.globalAlpha=.20;ctx.fill();ctx.globalAlpha=1;
+ }
+ ctx.strokeStyle="#7be7ff12";ctx.lineWidth=1;
+ for(let x=0;x<W;x+=40){ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,H);ctx.stroke()}
+ for(let y=0;y<H;y+=40){ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(W,y);ctx.stroke()}
+ ctx.beginPath();path.forEach((q,i)=>i?ctx.lineTo(q[0]*W,q[1]*H):ctx.moveTo(q[0]*W,q[1]*H));
+ ctx.lineCap="round";ctx.lineJoin="round";ctx.lineWidth=48;ctx.strokeStyle="#101827";ctx.stroke();
+ ctx.lineWidth=37;ctx.strokeStyle="#3b4660";ctx.stroke();
+ctx.lineWidth=3;ctx.strokeStyle="#7c5cff66";ctx.stroke();
+ ctx.lineWidth=2;ctx.setLineDash([9,11]);ctx.strokeStyle="#71809b";ctx.stroke();ctx.setLineDash([]);
+}
+
+/* ================= SHOP ================= */
+function shop(){
+ const el=document.getElementById("shop");el.innerHTML="";
+ Object.entries(T).forEach(([id,t])=>{
+  const b=document.createElement("button");b.className="cardbtn "+(!S.unlocked.includes(id)?"lock":"");
+  b.innerHTML=`<span class="ico">${t[1]}</span><small>${t[0]}</small><span class="cost">${S.unlocked.includes(id)?"🪙 "+t[2]:"🔒"}</span>`;
+  if(S.unlocked.includes(id))b.onclick=()=>{build=id;selected=null;note("Tap an open area to place "+t[0])};
+  else b.onclick=()=>note("Unlock this tower in the Collection.");
+  el.appendChild(b);
+ })
+}
+shop();
+
+/* ================= TOWERS ================= */
+function place(id,x,y){
+ const t=T[id];if(S.coins<t[2])return note("Not enough coins!");
+ if(onPath(x,y)||towers.some(q=>Math.hypot(q.x-x,q.y-y)<58))return note("That spot is blocked.");
+ S.coins-=t[2];S.totalCoins+=t[2];S.towersPlaced++;
+ const o={id:Math.random(),type:id,x,y,lv:1,last:0,kills:0,damage:t[3],range:t[4],rate:t[5],evo:0,target:"First"};
+ towers.push(o);build=null;renderTowers();ui();save();sfx("coin");
+}
+function renderTowers(){
+ entities.querySelectorAll(".tower").forEach(e=>e.remove());
+ towers.forEach(t=>{
+  const d=T[t.type],e=document.createElement("div");e.className="tower"+(selected===t?" sel":"");e.style.left=t.x+"px";e.style.top=t.y+"px";
+  e.innerHTML=`${d[1]}<span class="tlvl">Lv.${t.lv}</span>`;
+  e.style.borderColor=d[6];
+  e.style.boxShadow=(selected===t?"0 0 0 4px #ffd85a33, ":"")+"0 0 18px "+d[6]+"55,0 5px 18px #000";
+  e.onclick=x=>{x.stopPropagation();selectTower(t)};entities.appendChild(e);
+ })
+}
+function selectTower(t){
+ selected=t;build=null;const d=T[t.type],cost=Math.floor(d[2]*(.65+t.lv*.43));
+ const p=document.getElementById("panel");p.classList.add("show");
+ p.innerHTML=`<h3 style="margin:0">${d[1]} ${d[0]}</h3>
+ <p style="font-size:11px;color:#98a7bd">${EVOLVE[t.type]?EVOLVE[t.type][Math.min(t.evo,2)]:"Experimental defender"}</p>
+ <div class="row"><span>Level</span><b>${t.lv}</b></div><div class="row"><span>Damage</span><b>${Math.floor(t.damage)}</b></div>
+ <div class="row"><span>Range</span><b>${Math.floor(t.range)}</b></div><div class="row"><span>Kills</span><b>${t.kills}</b></div>
+ <button class="pbtn up" ${S.coins<cost?"disabled":""} onclick="upgrade()">⬆ Upgrade — 🪙 ${cost}</button>
+ <button class="pbtn" onclick="evolve()">✨ Evolve Tower</button>
+ <button class="pbtn" onclick="skin()">🎨 Change Skin</button>
+ <button class="pbtn" onclick="targetMode()">🎯 Target: ${t.target}</button>
+ <button class="pbtn bad" onclick="sell()">💰 Sell — 🪙 ${Math.floor(d[2]*.6)}</button>`;
+ renderTowers();
+}
+function upgrade(){
+ if(!selected)return;let d=T[selected.type],c=Math.floor(d[2]*(.65+selected.lv*.43));if(S.coins<c)return;
+ S.coins-=c;selected.lv++;selected.damage*=1.31;selected.range*=1.055;selected.rate*=.95;note("Upgraded to level "+selected.lv+"!");selectTower(selected);ui();save();
+}
+function evolve(){
+ if(!selected)return; if(selected.lv<10)return note("Reach level 10 to evolve.");
+ if(selected.evo>=2)return note("Maximum evolution reached.");
+ selected.evo++;selected.damage*=2.1;selected.range*=1.1;selected.rate*=.82;note("✨ EVOLUTION "+selected.evo+" UNLOCKED!");selectTower(selected);save();
+}
+function targetMode(){let a=["First","Last","Strongest","Weakest"],i=a.indexOf(selected.target);selected.target=a[(i+1)%a.length];selectTower(selected)}
+function sell(){if(!selected)return;S.coins+=Math.floor(T[selected.type][2]*.6);towers=towers.filter(x=>x!==selected);selected=null;document.getElementById("panel").classList.remove("show");renderTowers();ui();save()}
+function skin(){
+ openModal(`<h2>🎨 Skins</h2><p class="sub">Earn skins from achievements and events.</p>
+ ${S.ownedSkins.map(x=>`<div class="tile">${x==="default"?"Classic":x}<button onclick="note('Skin equipped!');closeModal()">EQUIP</button></div>`).join("")}<button class="big" onclick="closeModal()">BACK</button>`);
+}
+
+/* ================= ENEMIES ================= */
+function spawn(type,forced=false){
+ let d=EN[type],lvl=S.currentLevel,hp=d[2]*(1+(lvl-1)*.25)*(1+wave*.16);
+ enemies.push({id:Math.random(),type,hp,max:hp,p:0,slow:1});
+ if(d[4]>=1000)sfx("boss");
+}
+function chooseEnemy(t){
+ let a=enemies.filter(e=>{let q=point(e.p);return !e.dead&&Math.hypot(q.x-t.x,q.y-t.y)<=t.range});
+ if(!a.length)return null;
+ if(t.target==="Last")return a.reduce((x,y)=>x.p<y.p?x:y);
+ if(t.target==="Strongest")return a.reduce((x,y)=>x.hp>y.hp?x:y);
+ if(t.target==="Weakest")return a.reduce((x,y)=>x.hp<y.hp?x:y);
+ return a.reduce((x,y)=>x.p>y.p?x:y);
+}
+function startWave(){
+ if(!game||waveRunning)return;
+ if(wave>=maxWave)return finish();
+ wave++;waveRunning=true;S.totalWaves++;S.quests.waves++;
+ note("🌊 Wave "+wave+" begins!");
+ let count=8+wave*3+S.currentLevel;
+ for(let i=0;i<count;i++)setTimeout(()=>{if(game)spawn(enemyForWave())},i*270/speed);
+ if(wave===maxWave)setTimeout(()=>spawn(S.currentLevel>=16?"titan":S.currentLevel>=8?"mega":"boss",true),count*270/speed+500);
+ ui();save();
+}
+let waveRunning=false;
+function enemyForWave(){
+ let r=Math.random();
+ if(wave>=9&&r<.04)return"healer";
+ if(wave>=8&&r<.08)return"shield";
+ if(wave>=7&&r<.12)return"invisible";
+ if(wave>=6&&r<.18)return"splitter";
+ if(wave>=5&&r<.25)return"flying";
+ if(wave>=4&&r<.34)return"regen";
+ if(wave>=3&&r<.45)return"armored";
+ if(wave>=2&&r<.58)return"giant";
+ if(r<.78)return"fast";
+ return"basic";
+}
+
+/* ================= COMBAT ================= */
+function attack(t,now){
+ let d=T[t.type];
+ if(now-t.last<t.rate/(speed*(1+t.evo*.08)))return;
+ if(t.type==="farmer"){S.coins+=Math.floor(30*t.lv*(1+t.evo));t.last=now;return}
+ if(t.type==="doctor"){t.last=now;return}
+ let e=chooseEnemy(t);if(!e)return;t.last=now;
+ shots.push({x:t.x,y:t.y,e,dmg:t.damage,splash:["rocket","flame","wizard","pirate","hoodie","timekeeper","void","god"].includes(t.type)?50+t.evo*25:0,color:d[6]});
+ sfx("shoot");
+}
+function hit(s){
+ if(!s.e||s.e.dead)return;
+ let e=s.e,d=EN[e.type],dmg=s.dmg*(d[0]==="Shield Carrier"?.65:1);e.hp-=dmg;S.totalKills+=0;
+ float(e,"-"+Math.floor(dmg),dmg>500?"#ffd75a":"#fff");
+ if(s.splash)enemies.forEach(x=>{if(x!==e&&!x.dead){let a=point(x.p),b=point(e.p);if(Math.hypot(a.x-b.x,a.y-b.y)<s.splash)x.hp-=dmg*.4}});
+ if(e.hp<=0)kill(e);
+}
+function kill(e){
+ if(e.dead)return;e.dead=true;let d=EN[e.type];S.coins+=Math.floor(d[4]*(1+S.prestige*.15));S.totalKills++;S.quests.kills++;
+ if(d[4]>=1000){S.totalBosses++;S.quests.bosses++;note("👑 BOSS DEFEATED!")}
+ if(e.type==="splitter")for(let i=0;i<3;i++)enemies.push({id:Math.random(),type:"fast",hp:70,max:70,p:e.p,slow:1});
+ burst(point(e.p).x,point(e.p).y,d[0]==="BOSS"?"#ffd75a":"#fff",12);sfx("hit");
+}
+function update(dt){
+ if(!game)return;
+ towers.forEach(t=>attack(t,performance.now()));
+ enemies.forEach(e=>{
+  if(e.dead)return;e.slow=Math.min(1,e.slow+.0008*dt);
+  if(EN[e.type][0]==="Regenerator")e.hp=Math.min(e.max,e.hp+EN[e.type][2]*.004*dt);
+  e.p+=EN[e.type][3]*.0017*e.slow*speed;
+  if(e.p>=1){e.dead=true;S.lives??=100;lives-=EN[e.type][0].includes("BOSS")?25:1}
+ });
+ shots.forEach(s=>{
+  if(!s.e||s.e.dead)return;
+  let q=point(s.e.p),dx=q.x-s.x,dy=q.y-s.y,dist=Math.hypot(dx,dy);
+  if(dist<12){hit(s);s.done=true}else{s.x+=dx/dist*7*speed;s.y+=dy/dist*7*speed}
+ });
+ shots=shots.filter(s=>!s.done);
+ enemies=enemies.filter(e=>!e.dead);
+ if(lives<=0){gameOver();return}
+ if(waveRunning&&enemies.length===0){waveRunning=false;S.coins+=25+wave*5;ui();save()}
+}
+function render(){
+ entities.querySelectorAll(".enemy,.proj").forEach(x=>x.remove());
+ enemies.forEach(e=>{let d=EN[e.type],q=point(e.p),el=document.createElement("div");el.className="enemy"+(d[4]>=1000?" boss":"");el.style.left=q.x+"px";el.style.top=q.y+"px";el.innerHTML=`<span class="hp"><i style="width:${Math.max(0,e.hp/e.max*100)}%"></i></span>${d[1]}`;entities.appendChild(el)});
+ shots.forEach(s=>{let e=document.createElement("div");e.className="proj";e.style.left=s.x+"px";e.style.top=s.y+"px";e.style.background=s.color;e.style.color=s.color;entities.appendChild(e)});
+}
+function float(e,txt,color){let q=point(e.p),x=document.createElement("div");x.className="float";x.style.left=q.x+"px";x.style.top=q.y+"px";x.style.color=color;x.textContent=txt;map.appendChild(x);setTimeout(()=>x.remove(),650)}
+function burst(x,y,c,n){for(let i=0;i<n;i++){let e=document.createElement("i");e.className="part";e.style.left=x+"px";e.style.top=y+"px";e.style.background=c;e.style.setProperty("--x",(Math.random()*80-40)+"px");e.style.setProperty("--y",(Math.random()*80-40)+"px");map.appendChild(e);setTimeout(()=>e.remove(),650)}}
+
+/* ================= RUN ================= */
+let lives=100;
+function newRun(){closeModal();document.getElementById("home").classList.add("hidden");game=true;wave=0;waveRunning=false;lives=100;towers=[];enemies=[];shots=[];selected=null;build=null;maxWave=12+Math.floor(S.currentLevel/4);draw();renderTowers();ui();startMusic();note(MAPS[(S.currentLevel-1)%MAPS.length][1]+" "+MAPS[(S.currentLevel-1)%MAPS.length][0])}
+function finish(){game=false;S.coins+=300+S.currentLevel*80;S.xp+=100+S.currentLevel*20;if(!S.completed.includes(S.currentLevel))S.completed.push(S.currentLevel);if(S.currentLevel<20)S.currentLevel++;save();sfx("win");openModal(`<h1>🎉 LEVEL COMPLETE!</h1><p>You earned coins, XP, and progress toward the next map.</p><h3>🪙 +${300+(S.currentLevel-1)*80}</h3><button class="big" onclick="newRun()">NEXT LEVEL</button><button class="big" onclick="openLevels()">MAP SELECT</button>`)}
+function gameOver(){game=false;waveRunning=false;openModal(`<h1>💥 DEFEATED</h1><p>You reached wave ${wave} on ${MAPS[(S.currentLevel-1)%MAPS.length][0]}.</p><button class="big" onclick="newRun()">RETRY</button><button class="big" onclick="closeModal()">CLOSE</button>`)}
+
+/* ================= UI ================= */
+function ui(){document.getElementById("coins").textContent=Math.floor(S.coins);document.getElementById("gems").textContent=S.gems;document.getElementById("lives").textContent=Math.max(0,lives);document.getElementById("wave").textContent=wave+"/"+maxWave;document.getElementById("xp").textContent=S.xp}
+function note(x){let n=document.createElement("div");n.className="note";n.textContent=x;document.getElementById("notice").appendChild(n);setTimeout(()=>n.remove(),2600)}
+function openModal(html){document.getElementById("modalContent").innerHTML=html;document.getElementById("modalScreen").classList.remove("hidden")}
+function closeModal(){document.getElementById("modalScreen").classList.add("hidden")}
+function openLevels(){
+ let h=`<h1>🌎 MAP SELECT</h1><p class="sub">20 maps, increasingly wild enemies and special themes.</p><div class="grid">`;
+ MAPS.forEach((m,i)=>{let ok=i===0||S.completed.includes(i);h+=`<div class="tile ${S.completed.includes(i+1)?"done":""}"><b>${m[1]} ${i+1}</b><br><small>${m[0]}</small><button ${ok?"":"disabled"} onclick="selectLevel(${i+1})">${ok?"PLAY":"🔒 LOCKED"}</button></div>`});h+=`</div><button class="big" onclick="closeModal()">BACK</button>`;openModal(h)
+}
+function selectLevel(n){S.currentLevel=n;save();newRun()}
+function openCollection(){
+ let arr=Object.entries(T),h=`<h1>🗃️ COLLECTION</h1><p class="sub">${S.unlocked.length}/${arr.length} towers unlocked. Some are extremely rare.</p><div class="grid">`;
+ arr.forEach(([id,t],i)=>{let u=S.unlocked.includes(id);h+=`<div class="tile" style="${u?"":"opacity:.45"}"><div style="font-size:28px">${t[1]}</div><b>${u?t[0]:"???"}</b><br><small>${u?"🪙 "+t[2]:"LOCKED"}</small>${!u&&S.coins>=t[2]*.7?`<button onclick="unlock('${id}')">UNLOCK</button>`:""}</div>`});h+=`</div><button class="big" onclick="closeModal()">BACK</button>`;openModal(h)
+}
+function unlock(id){let c=Math.floor(T[id][2]*.7);if(S.coins<c)return note("Not enough coins!");S.coins-=c;S.unlocked.push(id);save();shop();openCollection();note(T[id][0]+" unlocked!")}
+function openMeta(){
+ openModal(`<h1>✨ META LAB</h1>
+ <p class="sub">Permanent bonuses survive between levels.</p>
+ <div class="tile"><b>Prestige: ${S.prestige}</b><p>Prestige resets your coins and normal progress but gives a permanent +15% enemy reward and tower damage bonus.</p><button onclick="prestige()">PRESTIGE</button></div>
+ <div class="tile"><b>Permanent Research</b><p>Use gems for permanent boosts.</p><button onclick="research('damage')">⚔️ +5% Tower Damage — 💎 5</button><button onclick="research('income')">🪙 +5% Coin Income — 💎 5</button></div>
+ <button class="big" onclick="closeModal()">BACK</button>`)
+}
+function prestige(){if(S.currentLevel<10)return note("Reach level 10 first.");if(!confirm("Prestige? This resets normal coins/levels but keeps towers and gives a permanent bonus."))return;S.prestige++;S.coins=750;S.currentLevel=1;S.completed=[];S.xp=0;save();note("✨ PRESTIGE "+S.prestige+"!");openMeta()}
+function research(x){if(S.gems<5)return note("Need 5 gems.");S.gems-=5;S[x]=(S[x]||0)+.05;save();openMeta()}
+function openQuests(){
+ let q=[["Defeat 100 enemies",S.quests.kills,100],["Survive 20 waves",S.quests.waves,20],["Defeat 3 bosses",S.quests.bosses,3],["Earn 10,000 coins",S.totalCoins,10000]];
+ let h=`<h1>📜 QUESTS</h1>`;q.forEach((a,i)=>{let done=a[1]>=a[2];h+=`<div class="tile"><b>${a[0]}</b><div>${Math.min(a[1],a[2])}/${a[2]}</div>${done?`<button onclick="claimQuest(${i})">CLAIM 🪙 ${100+i*100}</button>`:""}</div>`});h+=`<div class="tile"><b>🎁 Daily Reward</b><p>Come back each day for coins and gems.</p><button onclick="daily()">CLAIM DAILY</button></div><button class="big" onclick="closeModal()">BACK</button>`;openModal(h)}
+let claimed={};
+function claimQuest(i){if(claimed[i])return note("Already claimed.");let r=100+i*100;S.coins+=r;claimed[i]=1;save();note("Quest reward claimed!");openQuests()}
+function daily(){let day=new Date().toDateString();if(S.daily===day)return note("Daily reward already claimed.");S.daily=day;S.coins+=500;S.gems+=2;save();note("🎁 Daily reward: +500 coins +2 gems");openQuests()}
+function openAchievements(){
+ let a=[["First Blood",S.totalKills>=1],["100 Kills",S.totalKills>=100],["1,000 Kills",S.totalKills>=1000],["Boss Hunter",S.totalBosses>=5],["Tower Army",S.towersPlaced>=25],["Map Explorer",S.completed.length>=10],["Prestige",S.prestige>=1],["Collection",S.unlocked.length>=50]];
+ openModal(`<h1>🏆 ACHIEVEMENTS</h1>${a.map(x=>`<div class="tile ${x[1]?"done":""}">${x[1]?"🏆":"🔒"} <b>${x[0]}</b></div>`).join("")}<button class="big" onclick="closeModal()">BACK</button>`)
+}
+
+/* ================= MENU ================= */
+document.getElementById("start").onclick=()=>startWave();
+document.getElementById("speed").onclick=()=>{speed=speed===1?2:speed===2?3:1;document.getElementById("speed").textContent=speed+"×";startMusic()};
+document.getElementById("menu").onclick=()=>openModal(`<h1>☰ MENU</h1><button class="big" onclick="openLevels()">MAPS</button><button class="big" onclick="openCollection()">COLLECTION</button><button class="big" onclick="openMeta()">META LAB</button><button class="big" onclick="openQuests()">QUESTS</button><button class="big" onclick="openAchievements()">ACHIEVEMENTS</button><button class="big" onclick="musicOn=!musicOn;musicOn?startMusic():stopMusic();note(musicOn?'Music ON':'Music OFF')">🎵 TOGGLE MUSIC</button><button class="big" onclick="closeModal()">CLOSE</button>`);
+map.onclick=e=>{
+ if(e.target.closest(".tower"))return;
+ if(!game||!build)return;
+ let r=map.getBoundingClientRect(),x=e.clientX-r.left,y=e.clientY-r.top;place(build,x,y)
+};
+
+/* ================= LOOP ================= */
+function loop(now){
+ let dt=now-last;last=now;
+ if(game){draw();update(dt);render();ui()}
+ requestAnimationFrame(loop)
+}
+requestAnimationFrame(loop);
+draw();ui();save();
+
+/* Keyboard */
+addEventListener("keydown",e=>{if(e.code==="Space"){e.preventDefault();startWave()}});
+</script>
+</body>
+</html>
